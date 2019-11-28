@@ -22,7 +22,7 @@ public class EjercicioOpcional {
      * @param args the command line arguments
      */
     public static void main(String[] args) {
-        Parking park = new Parking(1,4);
+        Parking park = new Parking(4,8);
         
         park.inicializarHilos();
         System.out.println("Termina hilo main");

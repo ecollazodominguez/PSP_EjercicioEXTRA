@@ -15,24 +15,35 @@ import java.util.logging.Logger;
 public class Parking {
     
     static int plazas[];
-    Coche[] co;
+    EntradaCoche[] en;
+    SalidaCoche[] sa;
+    static boolean entrada = true;
+    
             static int cont=0;
+            
+    public Parking (){
+        
+    }
     public Parking(int nPlazas, int nCoches) {
         this.plazas = new int[nPlazas];
-        co = new Coche[nCoches];
+        en = new EntradaCoche[nCoches];
+        sa = new SalidaCoche[nCoches];
         inicializarArray();
         for (int i = 0; i < nCoches; i++) {
-            co[i] = new Coche(i+1);
+            en[i] = new EntradaCoche(i+1,this);
+            sa[i] = new SalidaCoche(i+1,this);
         }
     }
     
     public void inicializarHilos(){
-           for (int i = 0; i < co.length; i++) {
-            co[i].start();
+           for (int i = 0; i < en.length; i++) {
+            en[i].start();
+            sa[i].start();
         }
-                      for (int i = 0; i < co.length; i++) {
+                      for (int i = 0; i < en.length; i++) {
                try {
-                   co[i].join();
+                   en[i].join();
+                   sa[i].join();
                } catch (InterruptedException ex) {
                    Logger.getLogger(Parking.class.getName()).log(Level.SEVERE, null, ex);
                }
@@ -59,6 +70,59 @@ public class Parking {
             System.out.print("\n");
                     System.out.println("Plazas disponibles: "+cont+"\n");
 
+    }
+        
+        public synchronized void entrada(EntradaCoche enc) {
+
+         int aparcado=-1;   
+            
+        while (!entrada) {
+            try {
+                this.wait();
+            } catch (InterruptedException ex) {
+                Logger.getLogger(Parking.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+
+        for (int i = 0; i < Parking.plazas.length; i++) {
+
+            if (Parking.plazas[i] == 0 && aparcado != enc.getNumCoche()) {
+                aparcado = enc.getNumCoche();
+                Parking.plazas[i] = enc.getNumCoche();
+                System.out.println("ENTRADA: Coche " + enc.getNumCoche() + " aparca en " + (i + 1));
+                Parking.mostrarArray();
+                
+            }else if (Parking.plazas[i] == 0){
+                entrada = true;
+            }else{
+                entrada = false;
+            }
+        }
+
+        this.notifyAll();
+    }
+
+    public synchronized void salida(SalidaCoche sac) {
+
+        while (entrada) {
+            try {
+                this.wait();
+            } catch (InterruptedException ex) {
+                Logger.getLogger(Parking.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+        
+        for (int i = 0; i < Parking.plazas.length; i++) {
+
+            if (Parking.plazas[i] == sac.getNumCoche()) {
+                System.out.println("SALIDA: Coche " + sac.getNumCoche() + " saliendo");
+                Parking.plazas[i] = 0;
+                Parking.mostrarArray();
+                entrada = true;
+                this.notifyAll();
+            }
+
+        }
     }
 
 }
